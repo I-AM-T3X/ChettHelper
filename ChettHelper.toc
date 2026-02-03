@@ -1,0 +1,8 @@
+## Interface: 120000
+## Version: 2.0.0
+## Title: CHETT Helper
+## Notes: Tracks C.H.E.T.T. List objectives and automates Undermine interactions
+## Author: Converted from WeakAura
+## SavedVariables: CHETTHelperDB
+
+CHETTHelper.lua
