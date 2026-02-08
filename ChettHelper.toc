@@ -1,5 +1,5 @@
 ## Interface: 120000
-## Version: 1.0.0
+## Version: 1.0.1
 ## Title: CHETT Helper
 ## Notes: Tracks C.H.E.T.T. List objectives and automates Undermine interactions
 ## Author: Converted from WeakAura

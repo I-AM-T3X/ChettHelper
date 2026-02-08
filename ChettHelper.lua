@@ -36,16 +36,18 @@ local GOSSIP_RARE_OPTION = 124544
 local GOSSIP_LIST_OPTION = 131991
 local GOSSIP_DRILL_OPTIONS = {[125429] = true, [125409] = true, [125433] = true, [125434] = true}
 
+-- Main Frame
 local CHETTHelper = CreateFrame("Frame", "CHETTHelperFrame", UIParent)
 CHETTHelper:SetPoint("CENTER", 370, -40)
 CHETTHelper:SetMovable(true)
-CHETTHelper:EnableMouse(true)
-CHETTHelper:RegisterForDrag("LeftButton")
+-- FIX: Disable mouse on main frame so it doesn't block world clicks
+-- The buttons inside will still capture mouse because they EnableMouse(true) individually
+CHETTHelper:EnableMouse(false)
 CHETTHelper:SetFrameStrata("LOW")
 
 local CHETTSettings = {}
 local lastCompletedCount = 0
-local sideGigCompletionCache = {}
+local questCompletionCache = {}
 local hadListPreviously = false
 local needsUpdate = false
 
@@ -64,7 +66,7 @@ end
 
 local function IsSideGigCompleted()
     for questID, _ in pairs(SIDE_GIG_QUESTS) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) or sideGigCompletionCache[questID] then
+        if C_QuestLog.IsQuestFlaggedCompleted(questID) or questCompletionCache[questID] then
             return true
         end
     end
@@ -85,7 +87,7 @@ local function GetCompletedCount()
     for _, quest in ipairs(QUESTS) do
         if quest.key == "gig" then
             if IsSideGigCompleted() then count = count + 1 end
-        elseif C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
+        elseif C_QuestLog.IsQuestFlaggedCompleted(quest.id) or questCompletionCache[quest.id] then
             count = count + 1
         end
     end
@@ -110,6 +112,7 @@ local function CreateUI()
     
     CHETTHelper:SetSize(250, 400)
     
+    -- Open List Button - This handles dragging now since parent has no mouse
     CHETTHelper.openListBtn = CreateFrame("Button", "CHETTHelperOpenList", CHETTHelper, "SecureActionButtonTemplate")
     CHETTHelper.openListBtn:SetSize(40, 40)
     CHETTHelper.openListBtn:SetPoint("CENTER", CHETTHelper, "TOP", 0, -20)
@@ -119,6 +122,8 @@ local function CreateUI()
     CHETTHelper.openListBtn:RegisterForDrag("LeftButton")
     CHETTHelper.openListBtn:SetAttribute("type", "macro")
     CHETTHelper.openListBtn:SetAttribute("macrotext", "/use item:235053")
+    -- Explicitly enable mouse on button (it inherits false from parent)
+    CHETTHelper.openListBtn:EnableMouse(true)
     
     local icon = CHETTHelper.openListBtn:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints()
@@ -157,9 +162,16 @@ local function CreateUI()
         GameTooltip:Show()
     end)
     CHETTHelper.openListBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    CHETTHelper.openListBtn:SetScript("OnDragStart", function() CHETTHelper:StartMoving() end)
-    CHETTHelper.openListBtn:SetScript("OnDragStop", function() CHETTHelper:StopMovingOrSizing() end)
     
+    -- Drag handlers on button (since parent frame doesn't capture mouse anymore)
+    CHETTHelper.openListBtn:SetScript("OnDragStart", function() 
+        CHETTHelper:StartMoving() 
+    end)
+    CHETTHelper.openListBtn:SetScript("OnDragStop", function() 
+        CHETTHelper:StopMovingOrSizing() 
+    end)
+    
+    -- Buy Rep Button
     CHETTHelper.buyRepBtn = CreateFrame("Button", "CHETTHelperBuyRep", CHETTHelper, "SecureActionButtonTemplate")
     CHETTHelper.buyRepBtn:SetSize(40, 40)
     CHETTHelper.buyRepBtn:SetPoint("CENTER", CHETTHelper.openListBtn, "CENTER", 0, 0)
@@ -170,6 +182,8 @@ local function CreateUI()
     CHETTHelper.buyRepBtn:SetAttribute("type", "macro")
     CHETTHelper.buyRepBtn:SetAttribute("macrotext", "/run BuyMerchantItem(8,1)")
     CHETTHelper.buyRepBtn:Hide()
+    -- Explicitly enable mouse on button
+    CHETTHelper.buyRepBtn:EnableMouse(true)
     
     local repIcon = CHETTHelper.buyRepBtn:CreateTexture(nil, "ARTWORK")
     repIcon:SetAllPoints()
@@ -183,12 +197,18 @@ local function CreateUI()
         GameTooltip:Show()
     end)
     CHETTHelper.buyRepBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    CHETTHelper.buyRepBtn:SetScript("OnDragStart", function() CHETTHelper:StartMoving() end)
-    CHETTHelper.buyRepBtn:SetScript("OnDragStop", function() CHETTHelper:StopMovingOrSizing() end)
+    CHETTHelper.buyRepBtn:SetScript("OnDragStart", function() 
+        CHETTHelper:StartMoving() 
+    end)
+    CHETTHelper.buyRepBtn:SetScript("OnDragStop", function() 
+        CHETTHelper:StopMovingOrSizing() 
+    end)
     
+    -- Quest Frame - disable mouse so text doesn't block clicks
     CHETTHelper.questFrame = CreateFrame("Frame", nil, CHETTHelper)
     CHETTHelper.questFrame:SetPoint("TOP", CHETTHelper.openListBtn, "BOTTOM", 0, -5)
     CHETTHelper.questFrame:SetSize(250, 350)
+    CHETTHelper.questFrame:EnableMouse(false) -- FIX: Text/frame won't block clicks
     
     CHETTHelper.questLines = {}
     for i, quest in ipairs(QUESTS) do
@@ -212,7 +232,6 @@ local function CreateUI()
 end
 
 local function UpdateQuestList()
-    -- CRITICAL FIX: Check combat FIRST before any Show/Hide
     if InCombatLockdown() then
         needsUpdate = true
         return
@@ -229,18 +248,17 @@ local function UpdateQuestList()
         return
     end
     
-    -- Safe to show frame now
     CHETTHelper:Show()
     
     local hasListNow = HasCHETTList()
     if hasListNow and not hadListPreviously then
-        sideGigCompletionCache = {}
+        questCompletionCache = {}
     end
     hadListPreviously = hasListNow
     
-    for questID, _ in pairs(SIDE_GIG_QUESTS) do
-        if C_QuestLog.IsQuestFlaggedCompleted(questID) then
-            sideGigCompletionCache[questID] = true
+    for _, quest in ipairs(QUESTS) do
+        if quest.id ~= -1 and C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
+            questCompletionCache[quest.id] = true
         end
     end
     
@@ -257,7 +275,6 @@ local function UpdateQuestList()
     local ready = GetReadyCount()
     lastCompletedCount = completed
     
-    -- Only switch to buy rep button when all 4 are turned in (completed >= 4 AND none are waiting)
     local allTurnedIn = (completed >= COMPLETION_THRESHOLD and ready == 0)
     
     if allTurnedIn then
@@ -285,9 +302,9 @@ local function UpdateQuestList()
                 isReadyForTurnIn = IsSideGigReady()
             end
         else
-            shouldShow = C_QuestLog.IsOnQuest(quest.id)
+            shouldShow = C_QuestLog.IsOnQuest(quest.id) or questCompletionCache[quest.id]
             if shouldShow then
-                isComplete = C_QuestLog.ReadyForTurnIn(quest.id) or C_QuestLog.IsQuestFlaggedCompleted(quest.id)
+                isComplete = C_QuestLog.ReadyForTurnIn(quest.id) or C_QuestLog.IsQuestFlaggedCompleted(quest.id) or questCompletionCache[quest.id]
                 isReadyForTurnIn = C_QuestLog.ReadyForTurnIn(quest.id)
             end
         end
@@ -317,7 +334,6 @@ local function UpdateQuestList()
         end
     end
     
-    -- Update icon indicators
     if allTurnedIn then
         CHETTHelper.openListBtn.check:Show()
         CHETTHelper.openListBtn.glow:Hide()
@@ -379,7 +395,6 @@ local function ProcessGossip()
 end
 
 local function UpdateRepButton()
-    -- CRITICAL FIX: Don't touch protected frames during combat
     if InCombatLockdown() then return end
     
     if not MerchantFrame or not MerchantFrame:IsShown() then 
@@ -527,8 +542,14 @@ CHETTHelper:SetScript("OnEvent", function(self, event, ...)
         
     elseif event == "QUEST_TURNED_IN" then
         local questID = ...
+        for _, quest in ipairs(QUESTS) do
+            if quest.id == questID then
+                questCompletionCache[questID] = true
+                break
+            end
+        end
         if SIDE_GIG_QUESTS[questID] then
-            sideGigCompletionCache[questID] = true
+            questCompletionCache[questID] = true
         end
         
         if InCombatLockdown() then
@@ -546,8 +567,9 @@ CHETTHelper:SetScript("OnEvent", function(self, event, ...)
     end
 end)
 
-CHETTHelper:SetScript("OnDragStart", CHETTHelper.StartMoving)
-CHETTHelper:SetScript("OnDragStop", CHETTHelper.StopMovingOrSizing)
+-- Remove drag scripts from main frame (now handled by buttons)
+-- CHETTHelper:SetScript("OnDragStart", CHETTHelper.StartMoving)
+-- CHETTHelper:SetScript("OnDragStop", CHETTHelper.StopMovingOrSizing)
 
 print("|cffffd100CHETT Helper|r loaded. Type /chb for options.")
 
