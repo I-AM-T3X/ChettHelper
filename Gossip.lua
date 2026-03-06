@@ -1,11 +1,16 @@
 local addonName, addon = ...
 
 function addon:ProcessGossip()
+    -- Only process gossip in valid zones
+    if not self:IsInValidZone() then return end
+    
     if not self.Settings.skipGossip and not self.Settings.autoTake and not self.Settings.skipDrills then return end
     if not GossipFrame or not GossipFrame:IsShown() then return end
     
     local targetGUID = UnitGUID("target")
-    local npcID = targetGUID and select(6, strsplit("-", targetGUID))
+    if not targetGUID then return end
+    
+    local npcID = select(6, strsplit("-", targetGUID))
     npcID = tonumber(npcID)
     
     local options = C_GossipInfo.GetOptions()
