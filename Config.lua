@@ -60,7 +60,8 @@ function addon:CreateConfig()
     local startX = 12
     local startY = -42
     
-    for i, quest in ipairs(addon.QUESTS) do
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         local col = (i - 1) % 4
         local row = math.floor((i - 1) / 4)
         

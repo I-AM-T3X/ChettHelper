@@ -4,6 +4,19 @@ local addonName, addon = ...
 local questCompletionCache = {}
 
 function addon:IsInValidZone()
+    -- Don't show in battlegrounds/arenas (instanced PvP)
+    local inInstance, instanceType = IsInInstance()
+    if inInstance and (instanceType == "pvp" or instanceType == "arena") then
+        return false
+    end
+    
+    -- Don't show in dedicated PvP zones (like Deephaul Ravine)
+    -- This checks for "combat" type which is specific PvP areas, not just War Mode
+    local pvpType = C_PvP.GetZonePVPInfo()
+    if pvpType == "combat" or pvpType == "arena" then
+        return false
+    end
+    
     local mapID = C_Map.GetBestMapForUnit("player")
     return mapID and addon.VALID_ZONES[mapID] or false
 end
@@ -36,7 +49,8 @@ end
 
 function addon:GetCompletedCount()
     local count = 0
-    for _, quest in ipairs(addon.QUESTS) do
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         if quest.key == "gig" then
             if self:IsSideGigCompleted() then count = count + 1 end
         elseif C_QuestLog.IsQuestFlaggedCompleted(quest.id) or questCompletionCache[quest.id] then
@@ -48,7 +62,8 @@ end
 
 function addon:GetReadyCount()
     local count = 0
-    for _, quest in ipairs(addon.QUESTS) do
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         if quest.key == "gig" then
             if self:IsSideGigReady() then count = count + 1 end
         elseif C_QuestLog.IsOnQuest(quest.id) and C_QuestLog.ReadyForTurnIn(quest.id) then
@@ -71,8 +86,8 @@ function addon:IsQuestCached(questID)
 end
 
 function addon:CheckQuestInList(questID)
-    for _, quest in ipairs(addon.QUESTS) do
-        if quest.id == questID then
+    for i = 1, #addon.QUESTS do
+        if addon.QUESTS[i].id == questID then
             return true
         end
     end

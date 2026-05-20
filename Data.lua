@@ -10,7 +10,10 @@ addon.DEFAULT_WIDTH = 250
 
 -- Valid zones for the addon to show
 addon.VALID_ZONES = {
-    [2346] = true, [2214] = true, [862] = true, [2396] = true,
+    [2346] = true, -- Khaz Algar
+    [2214] = true, -- The Ringing Deeps
+    [862] = true,  -- Zuldazar
+    [2396] = true, -- City of Threads
 }
 
 -- Side gig quest IDs (special handling)

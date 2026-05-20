@@ -128,7 +128,8 @@ function addon:CreateUI()
     
     -- Quest lines
     local lineSpacing = GetLineSpacing()
-    for i, quest in ipairs(addon.QUESTS) do
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         local line = frame.questFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         line:SetFont(addon.FONT, addon.Settings.fontSize or addon.DEFAULT_FONT_SIZE, "OUTLINE")
         line:SetPoint("TOP", frame.questFrame, "TOP", 0, -(i-1) * lineSpacing)
@@ -171,8 +172,9 @@ function addon:UpdateQuestList()
     self.CHETTHelper:SetWidth(frameWidth)
     self.CHETTHelper.questFrame:SetWidth(frameWidth)
     
-    for _, line in ipairs(self.questLines) do
-        line:SetWidth(frameWidth)
+    -- Protected table iteration - use indexed loop to avoid taint
+    for i = 1, #self.questLines do
+        self.questLines[i]:SetWidth(frameWidth)
     end
     
     self.CHETTHelper.questFrame:ClearAllPoints()
@@ -188,7 +190,8 @@ function addon:UpdateQuestList()
     end
     self.hadListPreviously = hasListNow
     
-    for _, quest in ipairs(addon.QUESTS) do
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         if quest.id ~= -1 and C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
             self:CacheQuestCompletion(quest.id)
         end
@@ -224,7 +227,9 @@ function addon:UpdateQuestList()
     local lineSpacing = GetLineSpacing()
     local growUp = self.Settings.growDirection == "UP"
     
-    for i, quest in ipairs(addon.QUESTS) do
+    -- Use indexed loop instead of ipairs to prevent taint
+    for i = 1, #addon.QUESTS do
+        local quest = addon.QUESTS[i]
         local line = self.questLines[i]
         local shouldShow = false
         local isComplete = false

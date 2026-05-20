@@ -9,7 +9,8 @@ addon.needsUpdate = false
 local function InitializeSettings()
     if not CHETTHelperDB then 
         CHETTHelperDB = {} 
-        for _, q in ipairs(addon.QUESTS) do 
+        for i = 1, #addon.QUESTS do 
+            local q = addon.QUESTS[i]
             if CHETTHelperDB[q.key] == nil then
                 CHETTHelperDB[q.key] = q.default 
             end

@@ -16,7 +16,8 @@ function addon:ProcessGossip()
     local options = C_GossipInfo.GetOptions()
     if not options then return end
     
-    for _, option in ipairs(options) do
+    for i = 1, #options do
+        local option = options[i]
         if self.Settings.autoTake and option.gossipOptionID == addon.GOSSIP_LIST_OPTION then
             if not self:IsWeeklyCompleted() then
                 local hasSpace = false
