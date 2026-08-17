@@ -1,5 +1,5 @@
-## Interface: 120001, 120005
-## Version: 1.0.5
+## Interface: 120005, 120007, 120100
+## Version: 1.0.7
 ## Title: CHETT Helper
 ## Notes: Tracks C.H.E.T.T. List objectives and automates Undermine interactions
 ## Author: Converted from WeakAura
